@@ -1,4 +1,3 @@
-# Código principal do aplicativo Streamlit será adicionado manualmente.
 # relatorio_fiscalizacao_app.py
 import streamlit as st
 from datetime import datetime
@@ -110,8 +109,11 @@ with st.form("formulario"):
         "Outros"
     ]
     for item in opcoes:
-        status = st.radio(f"{item}", ["Conforme", "Não conforme"], horizontal=True)
-        conformidades.append(f"( {'X' if status == 'Conforme' else ' '} ) Conforme     ( {'X' if status == 'Não conforme' else ' '} ) Não conforme     -> {item}")
+        status = st.radio(f"{item}", ["Conforme", "Não conforme", "Não se aplica"], horizontal=True)
+        conforme = "X" if status == "Conforme" else " "
+        nao_conforme = "X" if status == "Não conforme" else " "
+        nao_aplica = "X" if status == "Não se aplica" else " "
+        conformidades.append(f"( {conforme} ) Conforme     ( {nao_conforme} ) Não conforme     ( {nao_aplica} ) Não se aplica     -> {item}")
 
     st.markdown("**Monitoramento Eletrônico**")
     kit = st.selectbox("Tipo de Kit", ["KIT-1", "KIT-2", "KIT-3", "KIT Específico", "Não identificado"])
@@ -139,9 +141,10 @@ with st.form("formulario"):
         salvar_dados(dados)
         pdf_path = gerar_pdf(dados)
         with open(pdf_path, "rb") as file:
+            pdf_bytes = file.read()
             st.download_button(
                 label="📄 Baixar Relatório em PDF",
-                data=file,
+                data=pdf_bytes,
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf"
             )
