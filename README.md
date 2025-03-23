@@ -1,2 +1,2 @@
-# Relatório de Fiscalização SANEAGO
-Aplicação Streamlit com geração de PDF e banco de dados.
+# Aplicativo de Relatórios de Fiscalização - SANEAGO
+Versão ajustada para rodar na nuvem sem erro de banco de dados.

@@ -1,4 +1,3 @@
-
 # relatorio_fiscalizacao_app.py
 import streamlit as st
 from datetime import datetime
@@ -161,7 +160,8 @@ with st.form("formulario"):
             'unidade': unidade,
             'municipio': municipio,
             'ocorrencias': ocorrencias,
-            'conformidades': "\n".join(conformidades),
+            'conformidades': "
+".join(conformidades),
             'kit': kit,
             'status': status_kit,
             'obs_kit': obs_kit,
@@ -178,3 +178,4 @@ with st.form("formulario"):
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf"
             )
+...
