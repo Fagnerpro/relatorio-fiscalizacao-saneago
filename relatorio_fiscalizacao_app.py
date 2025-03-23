@@ -1,14 +1,12 @@
-# relatorio_fiscalizacao_app.py
+
 import streamlit as st
 from datetime import datetime
 from fpdf import FPDF
 import os
 import sqlite3
 
-# Verifica se está rodando na nuvem
-is_cloud = os.environ.get("STREAMLIT_ENV", "") == "cloud"
-
-# Configurar o banco de dados SQLite
+# Detecta se está na Streamlit Cloud
+is_cloud = os.getenv("HOME") == "/home/appuser"
 
 def init_db():
     if is_cloud:
@@ -34,8 +32,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Salvar dados no banco
-
 def salvar_dados(dados):
     if is_cloud:
         return
@@ -55,8 +51,6 @@ def salvar_dados(dados):
     conn.commit()
     conn.close()
 
-# Gerar o PDF
-
 def gerar_pdf(dados):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -65,7 +59,6 @@ def gerar_pdf(dados):
 
     pdf.cell(200, 10, txt="RELATORIO DE FISCALIZACAO - CONTRATO 300000219/2022", ln=True, align="C")
     pdf.ln(10)
-
     pdf.cell(200, 10, txt=f"Fiscal: {dados['fiscal']}", ln=True)
     pdf.cell(200, 10, txt=f"Data da Fiscalizacao: {dados['data']}", ln=True)
     pdf.cell(200, 10, txt=f"Mes de Referencia: {dados['mes']}", ln=True)
@@ -99,7 +92,6 @@ def gerar_pdf(dados):
         pdf.add_page()
         pdf.set_font("Arial", style='B', size=12)
         pdf.cell(200, 10, txt="Fotos da Fiscalização:", ln=True)
-
         for i, nome in enumerate(dados['nomes_fotos']):
             if i % 4 == 0 and i != 0:
                 pdf.add_page()
@@ -148,14 +140,13 @@ with st.form("formulario"):
     kit = st.selectbox("Tipo de Kit", ["KIT-1", "KIT-2", "KIT-3", "KIT Específico", "Não identificado"])
     status_kit = st.radio("Status do Sistema", ["Em pleno funcionamento", "Com falhas"])
     obs_kit = st.text_area("Observações do Monitoramento Eletrônico")
-
     recomendacoes = st.text_area("Recomendações do Fiscal")
 
     st.markdown("**Fotos da Fiscalização (JPG ou PNG)**")
     imagens = st.file_uploader("Envie até 4 imagens", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
     nomes_fotos = []
     for i, imagem in enumerate(imagens[:4]):
-        nome_arquivo = f"foto_{i+1}_{datetime.now().strftime('%H%M%S')}.jpg"
+        nome_arquivo = f"/tmp/foto_{i+1}_{datetime.now().strftime('%H%M%S')}.jpg"
         with open(nome_arquivo, "wb") as f:
             f.write(imagem.getbuffer())
         nomes_fotos.append(nome_arquivo)
@@ -180,10 +171,9 @@ with st.form("formulario"):
         salvar_dados(dados)
         pdf_path = gerar_pdf(dados)
         with open(pdf_path, "rb") as file:
-            pdf_bytes = file.read()
             st.download_button(
                 label="📄 Baixar Relatório em PDF",
-                data=pdf_bytes,
+                data=file.read(),
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf"
             )
