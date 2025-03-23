@@ -5,8 +5,14 @@ from fpdf import FPDF
 import os
 import sqlite3
 
+# Verifica se está rodando na nuvem
+is_cloud = os.environ.get("STREAMLIT_ENV", "") == "cloud"
+
 # Configurar o banco de dados SQLite
+
 def init_db():
+    if is_cloud:
+        return
     conn = sqlite3.connect("relatorios.db")
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS relatorios (
@@ -29,7 +35,10 @@ def init_db():
     conn.close()
 
 # Salvar dados no banco
+
 def salvar_dados(dados):
+    if is_cloud:
+        return
     conn = sqlite3.connect("relatorios.db")
     c = conn.cursor()
     c.execute('''INSERT INTO relatorios (
@@ -47,6 +56,7 @@ def salvar_dados(dados):
     conn.close()
 
 # Gerar o PDF
+
 def gerar_pdf(dados):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -78,7 +88,7 @@ def gerar_pdf(dados):
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt=f"Tipo de Kit: {dados['kit']}", ln=True)
     pdf.cell(200, 10, txt=f"Status: {dados['status']}", ln=True)
-    pdf.multi_cell(0, 10, f"Observacoes: {dados['obs_kit']}" )
+    pdf.multi_cell(0, 10, f"Observacoes: {dados['obs_kit']}")
 
     pdf.set_font("Arial", style='B', size=12)
     pdf.cell(200, 10, txt="Recomendacoes:", ln=True)
@@ -160,8 +170,7 @@ with st.form("formulario"):
             'unidade': unidade,
             'municipio': municipio,
             'ocorrencias': ocorrencias,
-            'conformidades': "
-".join(conformidades),
+            'conformidades': "\n".join(conformidades),
             'kit': kit,
             'status': status_kit,
             'obs_kit': obs_kit,
@@ -178,4 +187,3 @@ with st.form("formulario"):
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf"
             )
-...
