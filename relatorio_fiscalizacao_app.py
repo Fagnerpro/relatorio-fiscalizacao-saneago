@@ -1,3 +1,4 @@
+
 # relatorio_fiscalizacao_app.py
 import streamlit as st
 from datetime import datetime
@@ -22,6 +23,7 @@ def init_db():
                     status_monitoramento TEXT,
                     observacoes_monitoramento TEXT,
                     recomendacoes TEXT,
+                    fotos_salvas TEXT,
                     criado_em TEXT
                 )''')
     conn.commit()
@@ -34,12 +36,13 @@ def salvar_dados(dados):
     c.execute('''INSERT INTO relatorios (
                     fiscal, data, mes_referencia, unidade, municipio, ocorrencias, 
                     conformidades, kit_monitoramento, status_monitoramento, 
-                    observacoes_monitoramento, recomendacoes, criado_em
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    observacoes_monitoramento, recomendacoes, fotos_salvas, criado_em
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
               (
                 dados['fiscal'], dados['data'], dados['mes'], dados['unidade'], dados['municipio'],
                 dados['ocorrencias'], dados['conformidades'], dados['kit'], dados['status'],
-                dados['obs_kit'], dados['recomendacoes'], datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                dados['obs_kit'], dados['recomendacoes'], ", ".join(dados['nomes_fotos']),
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
               ))
     conn.commit()
     conn.close()
@@ -47,6 +50,7 @@ def salvar_dados(dados):
 # Gerar o PDF
 def gerar_pdf(dados):
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("Arial", size=12)
 
@@ -75,12 +79,28 @@ def gerar_pdf(dados):
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt=f"Tipo de Kit: {dados['kit']}", ln=True)
     pdf.cell(200, 10, txt=f"Status: {dados['status']}", ln=True)
-    pdf.multi_cell(0, 10, f"Observacoes: {dados['obs_kit']}")
+    pdf.multi_cell(0, 10, f"Observacoes: {dados['obs_kit']}" )
 
     pdf.set_font("Arial", style='B', size=12)
     pdf.cell(200, 10, txt="Recomendacoes:", ln=True)
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, dados['recomendacoes'])
+
+    if dados['nomes_fotos']:
+        pdf.add_page()
+        pdf.set_font("Arial", style='B', size=12)
+        pdf.cell(200, 10, txt="Fotos da Fiscalização:", ln=True)
+
+        for i, nome in enumerate(dados['nomes_fotos']):
+            if i % 4 == 0 and i != 0:
+                pdf.add_page()
+            x = 10 + (i % 2) * 100
+            y = 30 + ((i % 4) // 2) * 100
+            pdf.image(nome, x=x, y=y, w=85, h=80)
+            pdf.set_xy(x, y + 82)
+            timestamp = datetime.now().strftime("Foto %d/%m/%Y %H:%M:%S")
+            pdf.set_font("Arial", size=8)
+            pdf.cell(85, 5, txt=timestamp, ln=True, align="C")
 
     caminho = f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     pdf.output(caminho)
@@ -122,6 +142,15 @@ with st.form("formulario"):
 
     recomendacoes = st.text_area("Recomendações do Fiscal")
 
+    st.markdown("**Fotos da Fiscalização (JPG ou PNG)**")
+    imagens = st.file_uploader("Envie até 4 imagens", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+    nomes_fotos = []
+    for i, imagem in enumerate(imagens[:4]):
+        nome_arquivo = f"foto_{i+1}_{datetime.now().strftime('%H%M%S')}.jpg"
+        with open(nome_arquivo, "wb") as f:
+            f.write(imagem.getbuffer())
+        nomes_fotos.append(nome_arquivo)
+
     submitted = st.form_submit_button("Gerar Relatório")
 
     if submitted:
@@ -136,7 +165,8 @@ with st.form("formulario"):
             'kit': kit,
             'status': status_kit,
             'obs_kit': obs_kit,
-            'recomendacoes': recomendacoes
+            'recomendacoes': recomendacoes,
+            'nomes_fotos': nomes_fotos
         }
         salvar_dados(dados)
         pdf_path = gerar_pdf(dados)
