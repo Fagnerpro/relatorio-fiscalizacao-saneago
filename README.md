@@ -1,1 +1,2 @@
-# Aplicação de Relatório de Fiscalização (Ajustada para Streamlit Cloud)
+# Relatório de Fiscalização - SANEAGO
+Aplicação para geração de relatórios em PDF com fotos e dados do contrato.
