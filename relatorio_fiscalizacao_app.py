@@ -1,14 +1,15 @@
 
+# relatorio_fiscalizacao_app.py
 import streamlit as st
 from datetime import datetime
 from fpdf import FPDF
 import os
 import sqlite3
 
-# Detectar ambiente na nuvem
+# Verifica se está rodando na nuvem (Streamlit Cloud)
 is_cloud = os.getenv("HOME") == "/home/appuser"
 
-# Inicialização do banco local
+# Configurar o banco de dados SQLite
 def init_db():
     if is_cloud:
         return
@@ -33,6 +34,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Salvar dados no banco
 def salvar_dados(dados):
     if is_cloud:
         return
@@ -52,40 +54,55 @@ def salvar_dados(dados):
     conn.commit()
     conn.close()
 
+# Gerar o PDF com layout melhorado
 def gerar_pdf(dados):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="RELATÓRIO DE FISCALIZAÇÃO - CONTRATO 300000219/2022", ln=True, align="C")
-    pdf.ln(10)
-    pdf.cell(200, 10, txt=f"Fiscal: {dados['fiscal']}", ln=True)
-    pdf.cell(200, 10, txt=f"Data da Fiscalização: {dados['data']}", ln=True)
-    pdf.cell(200, 10, txt=f"Mês de Referência: {dados['mes']}", ln=True)
-    pdf.cell(200, 10, txt=f"Unidade: {dados['unidade']}", ln=True)
-    pdf.cell(200, 10, txt=f"Município: {dados['municipio']}", ln=True)
+    pdf.set_font("Arial", style='B', size=14)
+    pdf.cell(0, 10, txt="RELATÓRIO DE FISCALIZAÇÃO - CONTRATO 300000219/2022", ln=True, align="C")
+    pdf.ln(8)
+
+    def linha_campo(label, valor):
+        pdf.set_font("Arial", style='B', size=12)
+        pdf.cell(50, 10, txt=label, ln=False)
+        pdf.set_font("Arial", size=12)
+        pdf.cell(100, 10, txt=valor, ln=True)
+
+    linha_campo("Fiscal:", dados['fiscal'])
+    linha_campo("Data da Fiscalização:", dados['data'])
+    linha_campo("Mês de Referência:", dados['mes'])
+    linha_campo("Unidade:", dados['unidade'])
+    linha_campo("Município:", dados['municipio'])
+
     pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(200, 10, txt="Ocorrências:", ln=True)
+    pdf.set_font("Arial", style='B', size=12)
+    pdf.cell(0, 10, txt="Ocorrências:", ln=True)
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, dados['ocorrencias'])
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(200, 10, txt="Conformidades:", ln=True)
+
+    pdf.set_font("Arial", style='B', size=12)
+    pdf.cell(0, 10, txt="Conformidades:", ln=True)
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, dados['conformidades'])
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(200, 10, txt="Monitoramento Eletrônico:", ln=True)
+
+    pdf.set_font("Arial", style='B', size=12)
+    pdf.cell(0, 10, txt="Monitoramento Eletrônico:", ln=True)
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Tipo de Kit: {dados['kit']}", ln=True)
-    pdf.cell(200, 10, txt=f"Status: {dados['status']}", ln=True)
+    pdf.cell(0, 10, txt=f"Tipo de Kit: {dados['kit']}", ln=True)
+    pdf.cell(0, 10, txt=f"Status: {dados['status']}", ln=True)
     pdf.multi_cell(0, 10, f"Observações: {dados['obs_kit']}")
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(200, 10, txt="Recomendações:", ln=True)
+
+    pdf.set_font("Arial", style='B', size=12)
+    pdf.cell(0, 10, txt="Recomendações:", ln=True)
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, dados['recomendacoes'])
 
     if dados['nomes_fotos']:
         pdf.add_page()
+        pdf.set_font("Arial", style='B', size=12)
+        pdf.cell(0, 10, txt="Fotos da Fiscalização:", ln=True)
+
         for i, nome in enumerate(dados['nomes_fotos']):
             if i % 4 == 0 and i != 0:
                 pdf.add_page()
@@ -93,13 +110,15 @@ def gerar_pdf(dados):
             y = 30 + ((i % 4) // 2) * 100
             pdf.image(nome, x=x, y=y, w=85, h=80)
             pdf.set_xy(x, y + 82)
+            timestamp = datetime.now().strftime("Foto %d/%m/%Y %H:%M:%S")
             pdf.set_font("Arial", size=8)
-            pdf.cell(85, 5, txt=datetime.now().strftime("Foto %d/%m/%Y %H:%M:%S"), ln=True, align="C")
+            pdf.cell(85, 5, txt=timestamp, ln=True, align="C")
 
-    path = f"/tmp/relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf" if is_cloud else f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    pdf.output(path)
-    return path
+    caminho = f"/tmp/relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf" if is_cloud else f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    pdf.output(caminho)
+    return caminho
 
+# Interface Streamlit
 init_db()
 st.title("Relatório de Fiscalização - SANEAGO")
 
@@ -110,6 +129,7 @@ with st.form("formulario"):
     unidade = st.text_input("Unidade Fiscalizada")
     municipio = st.text_input("Município")
     ocorrencias = st.text_area("Ocorrências Registradas")
+
     st.markdown("### Conformidades / Não Conformidades")
     conformidades = []
     opcoes = [
@@ -122,14 +142,18 @@ with st.form("formulario"):
     ]
     for item in opcoes:
         status = st.radio(item, ["Conforme", "Não conforme", "Não se aplica"], horizontal=True, key=item)
-        linha = f"( {'X' if status == 'Conforme' else ' '} ) Conforme  "                 f"( {'X' if status == 'Não conforme' else ' '} ) Não conforme  "                 f"( {'X' if status == 'Não se aplica' else ' '} ) Não se aplica  -> {item}"
+        linha = f"( {'X' if status == 'Conforme' else ' '} ) Conforme  " \
+                f"( {'X' if status == 'Não conforme' else ' '} ) Não conforme  " \
+                f"( {'X' if status == 'Não se aplica' else ' '} ) Não se aplica  -> {item}"
         conformidades.append(linha)
 
     st.markdown("### Monitoramento Eletrônico")
     kit = st.selectbox("Tipo de Kit", ["KIT-1", "KIT-2", "KIT-3", "KIT Específico", "Não identificado"])
     status_kit = st.radio("Status do Sistema", ["Em pleno funcionamento", "Com falhas"])
     obs_kit = st.text_area("Observações do Monitoramento Eletrônico")
+
     recomendacoes = st.text_area("Recomendações do Fiscal")
+
     st.markdown("### Fotos da Fiscalização")
     imagens = st.file_uploader("Envie até 4 imagens", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
     nomes_fotos = []
@@ -138,6 +162,7 @@ with st.form("formulario"):
         with open(nome, "wb") as f:
             f.write(img.getbuffer())
         nomes_fotos.append(nome)
+
     submitted = st.form_submit_button("Gerar Relatório")
 
 if submitted:
@@ -148,8 +173,7 @@ if submitted:
         'unidade': unidade,
         'municipio': municipio,
         'ocorrencias': ocorrencias,
-       'conformidades': "\n".join(conformidades),
-
+        'conformidades': "\n".join(conformidades),
         'kit': kit,
         'status': status_kit,
         'obs_kit': obs_kit,
