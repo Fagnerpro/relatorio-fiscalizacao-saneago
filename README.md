@@ -1,2 +1,1 @@
-# Relatório de Fiscalização
-Aplicação para geração de relatórios em PDF com Streamlit.
+# Aplicativo Streamlit para Relatórios de Fiscalização da SANEAGO
