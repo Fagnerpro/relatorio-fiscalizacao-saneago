@@ -1,15 +1,11 @@
-
-# relatorio_fiscalizacao_app.py
 import streamlit as st
 from datetime import datetime
 from fpdf import FPDF
 import os
 import sqlite3
 
-# Verifica se está rodando na nuvem (Streamlit Cloud)
 is_cloud = os.getenv("HOME") == "/home/appuser"
 
-# Configurar o banco de dados SQLite
 def init_db():
     if is_cloud:
         return
@@ -34,7 +30,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Salvar dados no banco
 def salvar_dados(dados):
     if is_cloud:
         return
@@ -54,7 +49,6 @@ def salvar_dados(dados):
     conn.commit()
     conn.close()
 
-# Gerar o PDF
 def gerar_pdf(dados):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -63,7 +57,6 @@ def gerar_pdf(dados):
 
     pdf.cell(200, 10, txt="RELATORIO DE FISCALIZACAO - CONTRATO 300000219/2022", ln=True, align="C")
     pdf.ln(10)
-
     pdf.cell(200, 10, txt=f"Fiscal: {dados['fiscal']}", ln=True)
     pdf.cell(200, 10, txt=f"Data da Fiscalizacao: {dados['data']}", ln=True)
     pdf.cell(200, 10, txt=f"Mes de Referencia: {dados['mes']}", ln=True)
@@ -97,7 +90,6 @@ def gerar_pdf(dados):
         pdf.add_page()
         pdf.set_font("Arial", style='B', size=12)
         pdf.cell(200, 10, txt="Fotos da Fiscalização:", ln=True)
-
         for i, nome in enumerate(dados['nomes_fotos']):
             if i % 4 == 0 and i != 0:
                 pdf.add_page()
@@ -105,18 +97,21 @@ def gerar_pdf(dados):
             y = 30 + ((i % 4) // 2) * 100
             pdf.image(nome, x=x, y=y, w=85, h=80)
             pdf.set_xy(x, y + 82)
-            timestamp = datetime.now().strftime("Foto %d/%m/%Y %H:%M:%S")
             pdf.set_font("Arial", size=8)
+            timestamp = datetime.now().strftime("Foto %d/%m/%Y %H:%M:%S")
             pdf.cell(85, 5, txt=timestamp, ln=True, align="C")
 
     caminho = f"/tmp/relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf" if is_cloud else f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     pdf.output(caminho)
     return caminho
 
-# Interface Streamlit
+def limpar_arquivos_temporarios(arquivos):
+    for arquivo in arquivos:
+        if os.path.exists(arquivo):
+            os.remove(arquivo)
+
 init_db()
 st.title("Relatório de Fiscalização - SANEAGO")
-
 with st.form("formulario"):
     fiscal = st.text_input("Fiscal Responsável")
     data_fiscalizacao = st.date_input("Data da Fiscalização")
@@ -127,14 +122,7 @@ with st.form("formulario"):
 
     st.markdown("**Conformidades / Não Conformidades**")
     conformidades = []
-    opcoes = [
-        "Vigilante presente no horário",
-        "Apresentação pessoal adequada",
-        "Condições do posto",
-        "Equipamentos de segurança",
-        "Comunicação com a central",
-        "Outros"
-    ]
+    opcoes = ["Vigilante presente no horário", "Apresentação pessoal adequada", "Condições do posto", "Equipamentos de segurança", "Comunicação com a central", "Outros"]
     for item in opcoes:
         status = st.radio(f"{item}", ["Conforme", "Não conforme", "Não se aplica"], horizontal=True)
         conforme = "X" if status == "Conforme" else " "
@@ -146,7 +134,6 @@ with st.form("formulario"):
     kit = st.selectbox("Tipo de Kit", ["KIT-1", "KIT-2", "KIT-3", "KIT Específico", "Não identificado"])
     status_kit = st.radio("Status do Sistema", ["Em pleno funcionamento", "Com falhas"])
     obs_kit = st.text_area("Observações do Monitoramento Eletrônico")
-
     recomendacoes = st.text_area("Recomendações do Fiscal")
 
     st.markdown("**Fotos da Fiscalização (JPG ou PNG)**")
@@ -159,34 +146,37 @@ with st.form("formulario"):
         nomes_fotos.append(nome_arquivo)
 
     submitted = st.form_submit_button("Gerar Relatório")
-
     if submitted:
-        dados = {
-            'fiscal': fiscal,
-            'data': data_fiscalizacao.strftime("%d/%m/%Y"),
-            'mes': mes_ref,
-            'unidade': unidade,
-            'municipio': municipio,
-            'ocorrencias': ocorrencias,
-            'conformidades': "
-".join(conformidades),
-            'kit': kit,
-            'status': status_kit,
-            'obs_kit': obs_kit,
-            'recomendacoes': recomendacoes,
-            'nomes_fotos': nomes_fotos
-        }
-        salvar_dados(dados)
-        pdf_path = gerar_pdf(dados)
+        try:
+            dados = {
+                'fiscal': fiscal,
+                'data': data_fiscalizacao.strftime("%d/%m/%Y"),
+                'mes': mes_ref,
+                'unidade': unidade,
+                'municipio': municipio,
+                'ocorrencias': ocorrencias,
+             'conformidades': "\n".join(conformidades),
 
-        if os.path.exists(pdf_path):
-            with open(pdf_path, "rb") as file:
-                pdf_bytes = file.read()
-            st.download_button(
-                label="📄 Baixar Relatório em PDF",
-                data=pdf_bytes,
-                file_name=os.path.basename(pdf_path),
-                mime="application/pdf"
-            )
-        else:
-            st.error("Erro: o arquivo PDF não foi encontrado.")
+                'kit': kit,
+                'status': status_kit,
+                'obs_kit': obs_kit,
+                'recomendacoes': recomendacoes,
+                'nomes_fotos': nomes_fotos
+            }
+            salvar_dados(dados)
+            pdf_path = gerar_pdf(dados)
+            if os.path.exists(pdf_path):
+                with open(pdf_path, "rb") as file:
+                    pdf_bytes = file.read()
+                st.download_button(
+                    label="📄 Baixar Relatório em PDF",
+                    data=pdf_bytes,
+                    file_name=os.path.basename(pdf_path),
+                    mime="application/pdf"
+                )
+                limpar_arquivos_temporarios(nomes_fotos + [pdf_path])
+            else:
+                st.error("Erro: o arquivo PDF não foi encontrado.")
+        except Exception as e:
+            st.error(f"Ocorreu um erro ao gerar o relatório: {e}")
+            limpar_arquivos_temporarios(nomes_fotos)
