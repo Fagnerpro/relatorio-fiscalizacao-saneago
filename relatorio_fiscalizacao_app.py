@@ -8,9 +8,9 @@ import qrcode
 # Verifica se está rodando na nuvem (Streamlit Cloud)
 is_cloud = os.getenv("HOME") == "/home/appuser"
 
-# Caminho do logotipo institucional
-logo_path = "/mnt/data/logo_vertical_colorido.png"
-qr_path = "/tmp/qrcode.png"
+# Caminho do logotipo institucional (usado tanto local quanto na nuvem)
+logo_path = "logo_vertical_colorido.png"
+qr_path = "qrcode.png"
 
 # Configurar o banco de dados SQLite
 def init_db():
@@ -172,6 +172,6 @@ def gerar_pdf(dados):
     for item in checklist:
         pdf.cell(0, 8, txt=item, ln=True)
 
-    caminho = f"/tmp/relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf" if is_cloud else f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    caminho = f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     pdf.output(caminho)
     return caminho
