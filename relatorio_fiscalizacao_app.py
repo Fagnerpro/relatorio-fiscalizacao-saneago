@@ -183,3 +183,72 @@ def gerar_pdf(dados):
     caminho = f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     pdf.output(caminho)
     return caminho
+
+# Interface Streamlit
+init_db()
+st.title("Relatório de Fiscalização - SANEAGO")
+
+with st.form("formulario"):
+    fiscal = st.text_input("Fiscal Responsável")
+    data_fiscalizacao = st.date_input("Data da Fiscalização")
+    mes_ref = st.text_input("Mês de Referência (MM/AAAA)")
+    unidade = st.text_input("Unidade Fiscalizada")
+    municipio = st.text_input("Município")
+    ocorrencias = st.text_area("Ocorrências Registradas")
+
+    st.markdown("### Conformidades / Não Conformidades")
+    conformidades = []
+    opcoes = [
+        "Vigilante presente no horário",
+        "Apresentação pessoal adequada",
+        "Condições do posto",
+        "Equipamentos de segurança",
+        "Comunicação com a central",
+        "Outros"
+    ]
+    for item in opcoes:
+        status = st.radio(item, ["Conforme", "Parcialmente conforme", "Não conforme", "Não se aplica"], horizontal=True, key=item)
+        linha = f"( {'X' if status == 'Conforme' else ' '} ) Conforme  " \
+                f"( {'X' if status == 'Parcialmente conforme' else ' '} ) Parcialmente conforme  " \
+                f"( {'X' if status == 'Não conforme' else ' '} ) Não conforme  " \
+                f"( {'X' if status == 'Não se aplica' else ' '} ) Não se aplica  -> {item}"
+        conformidades.append(linha)
+
+    st.markdown("### Monitoramento Eletrônico")
+    kit = st.selectbox("Tipo de Kit", ["KIT-1", "KIT-2", "KIT-3", "KIT Específico", "Não identificado"])
+    status_kit = st.radio("Status do Sistema", ["Em pleno funcionamento", "Com falhas"])
+    obs_kit = st.text_area("Observações do Monitoramento Eletrônico")
+
+    recomendacoes = st.text_area("Recomendações do Fiscal")
+
+    st.markdown("### Fotos da Fiscalização")
+    imagens = st.file_uploader("Envie até 16 imagens", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+    nomes_fotos = []
+    for i, img in enumerate(imagens[:16]):
+        nome = f"foto_{i+1}.jpg"
+        with open(nome, "wb") as f:
+            f.write(img.getbuffer())
+        nomes_fotos.append(nome)
+
+    submitted = st.form_submit_button("Gerar Relatório")
+
+if submitted:
+    dados = {
+        'fiscal': fiscal,
+        'data': data_fiscalizacao.strftime("%d/%m/%Y"),
+        'mes': mes_ref,
+        'unidade': unidade,
+        'municipio': municipio,
+        'ocorrencias': ocorrencias,
+        'conformidades': "\n".join(conformidades),
+        'kit': kit,
+        'status': status_kit,
+        'obs_kit': obs_kit,
+        'recomendacoes': recomendacoes,
+        'nomes_fotos': nomes_fotos
+    }
+    salvar_dados(dados)
+    pdf_path = gerar_pdf(dados)
+    if os.path.exists(pdf_path):
+        with open(pdf_path, "rb") as f:
+            st.download_button("📄 Baixar Relatório em PDF", data=f.read(), file_name=os.path.basename(pdf_path), mime="application/pdf")
