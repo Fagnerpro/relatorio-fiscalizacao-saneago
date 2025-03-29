@@ -63,10 +63,14 @@ def gerar_pdf(dados):
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
-    # Inserir logotipo institucional
-    if os.path.exists(logo_path):
-        pdf.image(logo_path, x=80, y=10, w=50)
-        pdf.ln(30)
+    # Inserir logotipo institucional com tratamento de erro
+    try:
+        if os.path.exists(logo_path):
+            pdf.image(logo_path, x=80, y=10, w=50)
+            pdf.ln(30)
+    except Exception as e:
+        pdf.set_font("Arial", size=10)
+        pdf.cell(0, 10, txt=f"[LOGO não carregado: {str(e)}]", ln=True)
 
     pdf.set_font("Arial", style='B', size=14)
     pdf.cell(0, 10, txt="RELATÓRIO DE FISCALIZAÇÃO - CONTRATO 300000219/2022", ln=True, align="C")
@@ -108,9 +112,12 @@ def gerar_pdf(dados):
     pdf.multi_cell(0, 10, dados['recomendacoes'])
 
     # Gerar QR Code com informações do relatório
-    qr_info = f"Fiscal: {dados['fiscal']} | Data: {dados['data']} | Unidade: {dados['unidade']}"
-    qr = qrcode.make(qr_info)
-    qr.save(qr_path)
+    try:
+        qr_info = f"Fiscal: {dados['fiscal']} | Data: {dados['data']} | Unidade: {dados['unidade']}"
+        qr = qrcode.make(qr_info)
+        qr.save(qr_path)
+    except Exception as e:
+        qr_path = None
 
     if dados['nomes_fotos']:
         for i, nome in enumerate(dados['nomes_fotos']):
@@ -135,11 +142,12 @@ def gerar_pdf(dados):
             pdf.cell(0, 5, txt="Relatório gerado pela Supervisão de Segurança Corporativa - SANEAGO", align="C", ln=True)
             pdf.cell(0, 5, txt=f"Página {pdf.page_no()}", align="C")
 
-    # Inserir QR Code na última página
-    pdf.add_page()
-    pdf.set_font("Arial", style='B', size=12)
-    pdf.cell(0, 10, txt="QR Code para validação do relatório:", ln=True)
-    pdf.image(qr_path, x=80, y=30, w=50)
+    # Inserir QR Code na última página (se foi gerado)
+    if qr_path and os.path.exists(qr_path):
+        pdf.add_page()
+        pdf.set_font("Arial", style='B', size=12)
+        pdf.cell(0, 10, txt="QR Code para validação do relatório:", ln=True)
+        pdf.image(qr_path, x=80, y=30, w=50)
 
     # Adicionar checklist institucional
     pdf.add_page()
