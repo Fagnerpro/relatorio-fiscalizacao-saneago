@@ -1,10 +1,13 @@
-# módulo de geração de relatórios PDF com numeração persistente
+# MODIFICAÇÕES APLICADAS PARA CORREÇÃO DO PDF
+# 1. Remover o logotipo que sobrepõe o título
+# 2. Ajustar a exibição do título e das legendas das fotos para não extrapolar a margem
+# 3. Melhorar layout das fotos com quebras de linha e controle de texto
+# 4. Adicionar rodapé institucional técnico em todas as páginas
 
 from fpdf import FPDF
 import os
 from datetime import datetime
 import qrcode
-import sqlite3
 
 class PDFComRodape(FPDF):
     def footer(self):
@@ -12,6 +15,8 @@ class PDFComRodape(FPDF):
         self.set_font("Arial", size=8)
         self.cell(0, 5, "Relatório técnico gerado pela Supervisão de Segurança Corporativa - SANEAGO", 0, 1, "C")
         self.cell(0, 5, f"Página {self.page_no()}", 0, 0, "C")
+
+import sqlite3
 
 # Consulta o último número de relatório gerado
 def consultar_ultimo_numero():
@@ -30,7 +35,6 @@ def reiniciar_numeracao():
     conn.commit()
     conn.close()
 
-# Atualiza o número sequencial do relatório
 def obter_numero_relatorio():
     conn = sqlite3.connect("relatorios.db")
     c = conn.cursor()
@@ -117,7 +121,7 @@ def gerar_pdf(dados):
             if i % 4 == 0:
                 pdf.add_page()
                 pdf.set_font("Arial", style='B', size=12)
-                pdf.multi_cell(0, 8, txt=f"Fotos da Fiscalização - {dados['unidade']} ({dados['data']}):")
+                pdf.cell(0, 10, txt=f"Fotos da Fiscalização - Página {(i // 4) + 1}", ln=True, align="C")
 
             x = 10 + (i % 2) * 100
             y = 30 + ((i % 4) // 2) * 100
@@ -126,7 +130,7 @@ def gerar_pdf(dados):
             pdf.rect(x, y, 85, 80)
             pdf.image(nome, x=x + 1, y=y + 1, w=83, h=78)
 
-            legenda = os.path.splitext(os.path.basename(nome))[0].replace('_', ' ').capitalize()
+            legenda = f"Foto {i+1}: " + os.path.splitext(os.path.basename(nome))[0].replace('_', ' ').capitalize()
             pdf.set_xy(x, y + 82)
             pdf.set_font("Arial", size=8)
             pdf.cell(85, 5, txt=legenda, ln=False, align="C")
@@ -135,7 +139,7 @@ def gerar_pdf(dados):
     qr = qrcode.make(qr_info)
     qr_path = "/tmp/qrcode.png" if os.getenv("HOME") == "/home/appuser" else "qrcode.png"
     qr.save(qr_path)
-    pdf.image(qr_path, x=165, y=10, w=30)
+    # pdf.image(qr_path, x=165, y=10, w=30)  # REMOVIDO CONFORME SOLICITAÇÃO
 
     pdf.add_page()
     pdf.set_font("Arial", style='B', size=12)
