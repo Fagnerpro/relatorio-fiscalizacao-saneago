@@ -1,11 +1,3 @@
-__pycache__/
-*.py[cod]
-*.pdf
-*.jpg
-*.jpeg
-*.png
-relatorios.db
-.streamlit/
-.venv/
-env/
-venv/
+
+dejavu-fonts-ttf-2.37.tar.bz2
+*.ttf
