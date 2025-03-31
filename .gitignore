@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.pdf
+*.jpg
+*.jpeg
+*.png
+relatorios.db
+.streamlit/
+.venv/
+env/
+venv/
