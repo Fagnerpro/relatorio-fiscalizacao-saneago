@@ -108,24 +108,27 @@ class PDFUnicode(FPDF):
         self.ln(2)
 
     def add_images_grid(self, images: List[str]) -> None:
-        self.add_page()
-        self.ln(20)  # espaço inicial para evitar sobreposição com cabeçalho
-
         for i, img_path in enumerate(images):
-            x = 10 + (i % 2) * 100
-            y = 30 + ((i % 4) // 2) * 100
+        # Adiciona nova página a cada 4 imagens
+         if i % 4 == 0:
+            self.add_page()
+            self.ln(20)
 
-            self.set_draw_color(0, 0, 0)
-            self.rect(x, y, 85, 80)
-            self.image(img_path, x=x+1, y=y+1, w=83, h=78)
+        x = 10 + (i % 2) * 100
+        y = 30 + ((i % 4) // 2) * 100
 
-            legenda = os.path.splitext(os.path.basename(img_path))[0].replace('_', ' ').capitalize()
-            self.set_xy(x, y+82)
-            self.set_font("DejaVuSansCondensed", size=8)
-            self.cell(85, 5, legenda, ln=False, align="C")
+        self.set_draw_color(0, 0, 0)
+        self.rect(x, y, 85, 80)
+        self.image(img_path, x=x+1, y=y+1, w=83, h=78)
 
-            if i % 2 == 1:
-                self.ln(90)
+        legenda = os.path.splitext(os.path.basename(img_path))[0].replace('_', ' ').capitalize()
+        self.set_xy(x, y+82)
+        self.set_font("DejaVuSansCondensed", size=8)
+        self.cell(85, 5, legenda, ln=False, align="C")
+
+        if i % 2 == 1:
+            self.ln(90)
+
 
 # Continuação no próximo bloco: funções generate_pdf, gerar_pdf_apos_salvar e main
 
