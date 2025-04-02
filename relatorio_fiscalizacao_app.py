@@ -109,26 +109,27 @@ class PDFUnicode(FPDF):
 
     def add_images_grid(self, images: List[str]) -> None:
         for idx, img_path in enumerate(images):
-        # Adiciona nova página a cada 4 imagens, exceto na primeira
-         if idx % 4 == 0 and idx != 0:
+        # A cada 4 imagens, inicia uma nova página
+         if idx % 4 == 0:
             self.add_page()
             self.ln(10)
 
-        col = idx % 2
-        row = (idx % 4) // 2
+        # Posição da imagem: 2 colunas, 2 linhas por página
+        pos_na_pagina = idx % 4
+        col = pos_na_pagina % 2  # 0 ou 1
+        row = pos_na_pagina // 2  # 0 ou 1
+
         x = 15 + col * 100
         y = 40 + row * 100
 
         self.set_draw_color(0, 0, 0)
         self.rect(x, y, 85, 80)
-        self.image(img_path, x=x+1, y=y+1, w=83, h=78)
+        self.image(img_path, x=x + 1, y=y + 1, w=83, h=78)
 
         legenda = os.path.splitext(os.path.basename(img_path))[0].replace('_', ' ').capitalize()
         self.set_xy(x, y + 82)
         self.set_font("DejaVuSansCondensed", size=8)
         self.cell(85, 5, legenda, ln=0, align="C")
-
-
 
 # Continuação no próximo bloco: funções generate_pdf, gerar_pdf_apos_salvar e main
 
