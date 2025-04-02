@@ -109,15 +109,15 @@ class PDFUnicode(FPDF):
 
     def add_images_grid(self, images: List[str]) -> None:
         for idx, img_path in enumerate(images):
-        # A cada 4 imagens, inicia uma nova página
-         if idx % 4 == 0:
-            self.add_page()
-            self.ln(10)
+        # A cada 4 imagens, inicia uma nova página (exceto na primeira)
+            if idx % 4 == 0:
+             self.add_page()
+             self.ln(10)
 
-        # Posição da imagem: 2 colunas, 2 linhas por página
+        # Posição da imagem: 2 colunas × 2 linhas por página
         pos_na_pagina = idx % 4
-        col = pos_na_pagina % 2  # 0 ou 1
-        row = pos_na_pagina // 2  # 0 ou 1
+        col = pos_na_pagina % 2
+        row = pos_na_pagina // 2
 
         x = 15 + col * 100
         y = 40 + row * 100
