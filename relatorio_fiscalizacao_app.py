@@ -72,9 +72,11 @@ class DatabaseManager:
 class PDFUnicode(FPDF):
     def __init__(self):
         super().__init__()
-        self.add_font("DejaVuSansCondensed", "", "DejaVuSansCondensed.ttf", uni=True)
-        self.add_font("DejaVuSansCondensed", "B", "DejaVuSansCondensed-Bold.ttf", uni=True)
-        self.add_font("DejaVuSansCondensed", "I", "DejaVuSansCondensed-BoldOblique.ttf", uni=True)
+        font_path = os.path.dirname(os.path.abspath(__file__))
+
+        self.add_font("DejaVuSansCondensed", "", os.path.join(font_path, "DejaVuSansCondensed.ttf"), uni=True)
+        self.add_font("DejaVuSansCondensed", "B", os.path.join(font_path, "DejaVuSansCondensed-Bold.ttf"), uni=True)
+        self.add_font("DejaVuSansCondensed", "I", os.path.join(font_path, "DejaVuSansCondensed-BoldOblique.ttf"), uni=True)
         self.set_auto_page_break(auto=True, margin=15)
         self.set_font("DejaVuSansCondensed", size=12)
         self.add_page()
