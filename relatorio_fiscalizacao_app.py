@@ -109,27 +109,29 @@ class PDFUnicode(FPDF):
 
     def add_images_grid(self, images: List[str]) -> None:
         for idx, img_path in enumerate(images):
-        # A cada 4 imagens, inicia uma nova página (exceto na primeira)
+            # A cada 4 imagens, inicia uma nova página (exceto na primeira)
             if idx % 4 == 0:
-             self.add_page()
-             self.ln(10)
+                self.add_page()
+                self.ln(10)
 
-        # Posição da imagem: 2 colunas × 2 linhas por página
-        pos_na_pagina = idx % 4
-        col = pos_na_pagina % 2
-        row = pos_na_pagina // 2
+            # Posição da imagem: 2 colunas × 2 linhas por página
+            pos_na_pagina = idx % 4
+            col = pos_na_pagina % 2
+            row = pos_na_pagina // 2
 
-        x = 15 + col * 100
-        y = 40 + row * 100
+            x = 15 + col * 100
+            y = 40 + row * 100
 
-        self.set_draw_color(0, 0, 0)
-        self.rect(x, y, 85, 80)
-        self.image(img_path, x=x + 1, y=y + 1, w=83, h=78)
+            self.set_draw_color(0, 0, 0)
+            self.rect(x, y, 85, 80)
+            self.image(img_path, x=x + 1, y=y + 1, w=83, h=78)
 
-        legenda = os.path.splitext(os.path.basename(img_path))[0].replace('_', ' ').capitalize()
-        self.set_xy(x, y + 82)
-        self.set_font("DejaVuSansCondensed", size=8)
-        self.cell(85, 5, legenda, ln=0, align="C")
+            legenda = os.path.splitext(os.path.basename(img_path))[0].replace('_', ' ').capitalize()
+            self.set_xy(x, y + 82)
+            self.set_font("DejaVuSansCondensed", size=8)
+            self.cell(85, 5, legenda, ln=0, align="C")
+
+
 
 # Continuação no próximo bloco: funções generate_pdf, gerar_pdf_apos_salvar e main
 
